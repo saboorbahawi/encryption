@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Character to Number Mapper with Cipher</title>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-light: #4895ef;
+            --secondary: #3f37c9;
+            --dark: #1a1a2e;
+            --light: #f8f9fa;
+            --success: #4cc9f0;
+            --warning: #f72585;
+            --gray: #6c757d;
+            --gray-light: #e9ecef;
+            --border-radius: 12px;
+            --box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            background: white;
+            padding: 2.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            width: 100%;
+            max-width: 900px;
+            margin: 2rem 0;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary);
+            margin-bottom: 2rem;
+            font-weight: 700;
+            font-size: 2rem;
+        }
+
+        h2 {
+            font-size: 1.3rem;
+            color: var(--secondary);
+            margin: 1.5rem 0 1rem;
+            font-weight: 600;
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+
+        h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: var(--primary-light);
+            border-radius: 3px;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.75rem;
+            color: var(--dark);
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid var(--gray-light);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+            background-color: var(--light);
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        .output, .cipher-output, .cipher-steps, .checksum-output, 
+        .decrypt-output, .decrypt-steps {
+            background: var(--light);
+            padding: 1.25rem;
+            border-radius: var(--border-radius);
+            min-height: 3rem;
+            word-break: break-all;
+            color: var(--dark);
+            margin-top: 0.75rem;
+            font-family: 'Consolas', 'Monaco', monospace;
+            border-left: 4px solid var(--primary);
+        }
+
+        .char-mapping {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .char-mapping span {
+            background: var(--gray-light);
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-weight: 500;
+        }
+
+        .cipher-steps p, .checksum-output p, .decrypt-steps p {
+            margin: 0.5rem 0;
+            line-height: 1.5;
+        }
+
+        .char-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 2rem;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: 0 0 0 1px var(--gray-light);
+        }
+
+        .char-table th, .char-table td {
+            border: 1px solid var(--gray-light);
+            padding: 0.75rem;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .char-table th {
+            background: var(--primary);
+            color: white;
+            font-weight: 500;
+        }
+
+        .char-table tr:nth-child(even) {
+            background-color: rgba(248, 249, 250, 0.5);
+        }
+
+        .char-table tr:hover {
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+
+        .section {
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .step-number {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            margin-right: 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        .process-flow {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .process-step {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            border-left: 4px solid var(--primary);
+        }
+
+        .process-step h3 {
+            color: var(--primary);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .process-step-content {
+            padding-left: 1.75rem;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .char-table th, .char-table td {
+                padding: 0.5rem;
+                font-size: 0.8rem;
+            }
+            
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Character to Number Mapper with Cipher</h1>
+        
+        <div class="section">
+            <h2>Character to Number Mapping Table</h2>
+            <table class="char-table">
+                <tr>
+                    <th>Char</th><th>Value</th><th>Char</th><th>Value</th><th>Char</th><th>Value</th><th>Char</th><th>Value</th>
+                </tr>
+                <tr>
+                    <td>a</td><td>10</td><td>j</td><td>19</td><td>s</td><td>28</td><td>2</td><td>02</td>
+                </tr>
+                <tr>
+                    <td>b</td><td>11</td><td>k</td><td>20</td><td>t</td><td>29</td><td>3</td><td>03</td>
+                </tr>
+                <tr>
+                    <td>c</td><td>12</td><td>l</td><td>21</td><td>u</td><td>30</td><td>4</td><td>04</td>
+                </tr>
+                <tr>
+                    <td>d</td><td>13</td><td>m</td><td>22</td><td>v</td><td>31</td><td>5</td><td>05</td>
+                </tr>
+                <tr>
+                    <td>e</td><td>14</td><td>n</td><td>23</td><td>w</td><td>32</td><td>6</td><td>06</td>
+                </tr>
+                <tr>
+                    <td>f</td><td>15</td><td>o</td><td>24</td><td>x</td><td>33</td><td>7</td><td>07</td>
+                </tr>
+                <tr>
+                    <td>g</td><td>16</td><td>p</td><td>25</td><td>y</td><td>34</td><td>8</td><td>08</td>
+                </tr>
+                <tr>
+                    <td>h</td><td>17</td><td>q</td><td>26</td><td>z</td><td>35</td><td>9</td><td>09</td>
+                </tr>
+                <tr>
+                    <td>i</td><td>18</td><td>r</td><td>27</td><td>1</td><td>01</td><td> </td><td>00</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="two-column">
+            <!-- Encryption Section -->
+            <div class="section">
+                <h2>Encryption Process</h2>
+                <div class="input-group">
+                    <label for="inputText">Text to encrypt:</label>
+                    <input type="text" id="inputText" placeholder="e.g., abc 123" autofocus>
+                </div>
+                <div class="input-group">
+                    <label for="keyInput">Encryption key (number):</label>
+                    <input type="number" id="keyInput" placeholder="e.g., 42" value="42">
+                </div>
+                
+                <div class="process-flow">
+                    <div class="process-step">
+                        <h3><span class="step-number">1</span> Character Mapping</h3>
+                        <div class="process-step-content">
+                            <div class="char-mapping" id="charMapping"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="process-step">
+                        <h3><span class="step-number">2</span> Plaintext Numbers</h3>
+                        <div class="process-step-content">
+                            <div class="output" id="output"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="process-step">
+                        <h3><span class="step-number">3</span> Cipher Calculation</h3>
+                        <div class="process-step-content">
+                            <div class="cipher-steps" id="cipherSteps"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="process-step">
+                        <h3><span class="step-number">4</span> Final Ciphertext</h3>
+                        <div class="process-step-content">
+                            <div class="cipher-output" id="cipherOutput"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="process-step">
+                        <h3><span class="step-number">5</span> Checksum</h3>
+                        <div class="process-step-content">
+                            <div class="checksum-output" id="checksumOutput"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Decryption Section -->
+            <div class="section">
+                <h2>Decryption Process</h2>
+                <div class="input-group">
+                    <label for="decryptInput">Ciphertext (comma-separated):</label>
+                    <input type="text" id="decryptInput" placeholder="e.g., 22,19,26,26,29,11">
+                </div>
+                <div class="input-group">
+                    <label for="decryptKeyInput">Decryption key (number):</label>
+                    <input type="number" id="decryptKeyInput" placeholder="e.g., 42" value="42">
+                </div>
+                
+                <div class="process-flow">
+                    <div class="process-step">
+                        <h3><span class="step-number">1</span> Separate Components</h3>
+                        <div class="process-step-content">
+                            <div class="decrypt-steps" id="decryptSplitOutput"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="process-step">
+                        <h3><span class="step-number">2</span> Verify Checksum</h3>
+                        <div class="process-step-content">
+                            <div class="decrypt-steps" id="checksumVerifyOutput"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="process-step">
+                        <h3><span class="step-number">3</span> Decrypt Ciphertext</h3>
+                        <div class="process-step-content">
+                            <div class="decrypt-steps" id="decryptStepsOutput"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="process-step">
+                        <h3><span class="step-number">4</span> Convert to Text</h3>
+                        <div class="process-step-content">
+                            <div class="decrypt-steps" id="decryptTextOutput"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="process-step">
+                        <h3><span class="step-number">5</span> Final Decrypted Text</h3>
+                        <div class="process-step-content">
+                            <div class="decrypt-output" id="finalDecryptOutput"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // All the original JavaScript code remains exactly the same
+        const charToValueMap = {
+            'a': '10', 'b': '11', 'c': '12', 'd': '13', 'e': '14',
+            'f': '15', 'g': '16', 'h': '17', 'i': '18', 'j': '19',
+            'k': '20', 'l': '21', 'm': '22', 'n': '23', 'o': '24',
+            'p': '25', 'q': '26', 'r': '27', 's': '28', 't': '29',
+            'u': '30', 'v': '31', 'w': '32', 'x': '33', 'y': '34',
+            'z': '35', '1': '01', '2': '02', '3': '03', '4': '04',
+            '5': '05', '6': '06', '7': '07', '8': '08', '9': '09',
+            ' ': '00'
+        };
+
+        const valueToCharMap = Object.fromEntries(
+            Object.entries(charToValueMap).map(([char, value]) => [value, char])
+        );
+
+        // Encryption Functions
+        function mapStringToNumbers(input) {
+            return input.toLowerCase().split('').map(char => {
+                return charToValueMap[char] ?? '??';
+            });
+        }
+
+        function generateCiphertext(numbers, key) {
+            const steps = [];
+            const ciphertext = numbers.map((num, index) => {
+                if (num === '??') {
+                    steps.push(`Character ${index + 1}: Unknown character, output = ??`);
+                    return '??';
+                }
+                const value = parseInt(num);
+                const cipherValue = (value + key) % 37;
+                steps.push(`Character ${index + 1}: (${value} + ${key}) mod 37 = ${cipherValue}`);
+                return cipherValue.toString().padStart(2, '0');
+            });
+            return { ciphertext, steps };
+        }
+
+        function calculateChecksum(ciphertext) {
+            const numbers = ciphertext.filter(num => num !== '??').map(num => parseInt(num));
+            if (numbers.length === 0) return { checksum: null, steps: ['No valid numbers to calculate checksum'] };
+            
+            const sum = numbers.reduce((acc, num) => acc + num, 0);
+            const checksum = sum % 37;
+            const checksumStr = checksum.toString().padStart(2, '0');
+            const finalOutput = [...ciphertext, checksumStr].join(',');
+            const steps = [
+                `Sum: ${numbers.join(' + ')} = ${sum}`,
+                `${sum} mod 37 = ${checksum}`,
+                `Checksum = ${checksum}`,
+                `Final Ciphertext with Checksum: ${finalOutput}`
+            ];
+            return { checksum, steps, finalOutput };
+        }
+
+        function displayCharMappings(input) {
+            const uniqueChars = [...new Set(input.toLowerCase().split(''))];
+            return uniqueChars
+                .map(char => {
+                    const value = charToValueMap[char] ?? '??';
+                    return `<span>${char} = ${value}</span>`;
+                })
+                .join('');
+        }
+
+        // Decryption Functions
+        function splitCiphertextAndChecksum(input) {
+            const numbers = input.split(',').map(num => num.trim());
+            if (numbers.length < 2) return { error: 'Invalid input: At least one ciphertext number and checksum required' };
+            
+            const checksum = parseInt(numbers.pop());
+            const ciphertext = numbers.map(num => {
+                const parsed = parseInt(num);
+                return isNaN(parsed) ? '??' : parsed.toString().padStart(2, '0');
+            });
+            return { ciphertext, checksum, steps: [`Ciphertext: [${ciphertext.join(', ')}]`, `Checksum: ${checksum}`] };
+        }
+
+        function verifyChecksum(ciphertext, providedChecksum) {
+            const numbers = ciphertext.filter(num => num !== '??').map(num => parseInt(num));
+            if (numbers.length === 0) return { valid: false, steps: ['No valid numbers to verify checksum'] };
+            
+            const sum = numbers.reduce((acc, num) => acc + num, 0);
+            const calculatedChecksum = sum % 37;
+            const valid = calculatedChecksum === providedChecksum;
+            const steps = [
+                `Sum: ${numbers.join(' + ')} = ${sum}`,
+                `${sum} mod 37 = ${calculatedChecksum}`,
+                valid ? `Checksum ${calculatedChecksum} matches provided checksum ${providedChecksum}` : `Checksum mismatch: ${calculatedChecksum} ≠ ${providedChecksum}`
+            ];
+            return { valid, steps };
+        }
+
+        function decryptCiphertext(ciphertext, key) {
+            const steps = [];
+            const plaintext = ciphertext.map((num, index) => {
+                if (num === '??') {
+                    steps.push(`Character ${index + 1}: Unknown number, output = ??`);
+                    return '??';
+                }
+                const value = parseInt(num);
+                const plainValue = ((value - key) % 37 + 37) % 37;
+                steps.push(`Character ${index + 1}: (${value} - ${key}) mod 37 = ${plainValue}`);
+                return plainValue.toString().padStart(2, '0');
+            });
+            return { plaintext, steps };
+        }
+
+        function convertToText(plaintext) {
+            const steps = [];
+            const text = plaintext.map((num, index) => {
+                if (num === '??') {
+                    steps.push(`Number ${index + 1}: Unknown number, output = ?`);
+                    return '?';
+                }
+                const char = valueToCharMap[num] || '?';
+                steps.push(`Number ${index + 1}: ${num} = ${char}`);
+                return char;
+            }).join('');
+            return { text, steps };
+        }
+
+        // Event Listeners
+        const inputElement = document.getElementById('inputText');
+        const keyElement = document.getElementById('keyInput');
+        const outputElement = document.getElementById('output');
+        const cipherOutputElement = document.getElementById('cipherOutput');
+        const charMappingElement = document.getElementById('charMapping');
+        const cipherStepsElement = document.getElementById('cipherSteps');
+        const checksumOutputElement = document.getElementById('checksumOutput');
+        const decryptInputElement = document.getElementById('decryptInput');
+        const decryptKeyElement = document.getElementById('decryptKeyInput');
+        const decryptSplitOutputElement = document.getElementById('decryptSplitOutput');
+        const checksumVerifyOutputElement = document.getElementById('checksumVerifyOutput');
+        const decryptStepsOutputElement = document.getElementById('decryptStepsOutput');
+        const decryptTextOutputElement = document.getElementById('decryptTextOutput');
+        const finalDecryptOutputElement = document.getElementById('finalDecryptOutput');
+
+        function updateEncryptionOutputs() {
+            const inputText = inputElement.value;
+            const key = parseInt(keyElement.value) || 0;
+            const mappedNumbers = mapStringToNumbers(inputText);
+            const result = mappedNumbers.join(' ');
+            const { ciphertext, steps } = generateCiphertext(mappedNumbers, key);
+            const { checksum, steps: checksumSteps, finalOutput } = calculateChecksum(ciphertext);
+
+            outputElement.textContent = result || 'Enter text to see the mapping';
+            cipherOutputElement.textContent = ciphertext.join(' ') || 'Ciphertext will appear here';
+            charMappingElement.innerHTML = inputText ? displayCharMappings(inputText) : '';
+            cipherStepsElement.innerHTML = steps.length ? steps.map(step => `<p>${step}</p>`).join('') : 'Enter text to see cipher steps';
+            checksumOutputElement.innerHTML = checksumSteps.map(step => `<p>${step}</p>`).join('') || 'Enter text to see checksum';
+        }
+
+        function updateDecryptionOutputs() {
+            const inputText = decryptInputElement.value;
+            const key = parseInt(decryptKeyElement.value) || 0;
+
+            const splitResult = splitCiphertextAndChecksum(inputText);
+            if (splitResult.error) {
+                decryptSplitOutputElement.innerHTML = `<p>${splitResult.error}</p>`;
+                checksumVerifyOutputElement.innerHTML = '';
+                decryptStepsOutputElement.innerHTML = '';
+                decryptTextOutputElement.innerHTML = '';
+                finalDecryptOutputElement.textContent = 'Decryption failed';
+                return;
+            }
+
+            const { ciphertext, checksum, steps: splitSteps } = splitResult;
+            const { valid, steps: verifySteps } = verifyChecksum(ciphertext, checksum);
+            
+            decryptSplitOutputElement.innerHTML = splitSteps.map(step => `<p>${step}</p>`).join('');
+            checksumVerifyOutputElement.innerHTML = verifySteps.map(step => `<p>${step}</p>`).join('');
+
+            if (!valid) {
+                decryptStepsOutputElement.innerHTML = '<p>Checksum verification failed. Data may be tampered.</p>';
+                decryptTextOutputElement.innerHTML = '';
+                finalDecryptOutputElement.textContent = 'Decryption failed due to checksum mismatch';
+                return;
+            }
+
+            const { plaintext, steps: decryptSteps } = decryptCiphertext(ciphertext, key);
+            const { text, steps: textSteps } = convertToText(plaintext);
+
+            decryptStepsOutputElement.innerHTML = decryptSteps.map(step => `<p>${step}</p>`).join('');
+            decryptTextOutputElement.innerHTML = textSteps.map(step => `<p>${step}</p>`).join('');
+            finalDecryptOutputElement.textContent = text || 'Decrypted text will appear here';
+        }
+
+        inputElement.addEventListener('input', updateEncryptionOutputs);
+        keyElement.addEventListener('input', updateEncryptionOutputs);
+        decryptInputElement.addEventListener('input', updateDecryptionOutputs);
+        decryptKeyElement.addEventListener('input', updateDecryptionOutputs);
+    </script>
+</body>
+</html>

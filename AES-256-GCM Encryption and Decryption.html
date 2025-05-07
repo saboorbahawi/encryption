@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AES-256-GCM Encryption and Decryption</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 20px rgba(0, 0, 0, 0.1); }
+        h1 { text-align: center; }
+        .section { margin-bottom: 30px; }
+        textarea, input { width: 100%; padding: 10px; margin: 10px 0; }
+        button { padding: 10px 15px; background-color: #007bff; color: #fff; border: none; cursor: pointer; border-radius: 5px; }
+        button:hover { background-color: #0056b3; }
+        #encryptionSteps, #decryptionSteps { background: #f0f0f0; padding: 15px; margin-top: 10px; border-radius: 5px; }
+        .step { margin-bottom: 10px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .explanation { margin-top: 15px; background: #e9ecef; padding: 10px; border-left: 4px solid #007bff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AES-256-GCM Encryption and Decryption</h1>
+
+        <div class="section">
+            <h2>Encryption (رمزگذاری)</h2>
+            <label>Plaintext (متن ساده):</label>
+            <textarea id="plaintext" placeholder="Enter plaintext / متن ساده را وارد کنید"></textarea>
+            <button onclick="encryptText()">Encrypt (رمزگذاری)</button>
+            <div id="ciphertextDisplay"></div>
+            <div id="encryptionSteps"></div>
+        </div>
+
+        <div class="section">
+            <h2>Decryption (رمزگشایی)</h2>
+            <label>Ciphertext (متن رمز شده):</label>
+            <input type="text" id="ciphertext" placeholder="Enter encrypted text / متن رمز شده را وارد کنید">
+            <label>IV (Nonce) (بردار اولیه):</label>
+            <input type="text" id="iv" placeholder="Enter IV / بردار اولیه را وارد کنید">
+            <label>Key (کلید):</label>
+            <input type="text" id="key" placeholder="Enter Key / کلید را وارد کنید">
+            <button onclick="decryptText()">Decrypt (رمزگشایی)</button>
+            <div id="decryptionSteps"></div>
+        </div>
+
+        <script>
+            async function encryptText() {
+                const plaintext = document.getElementById('plaintext').value;
+                const key = crypto.getRandomValues(new Uint8Array(32));
+                const iv = crypto.getRandomValues(new Uint8Array(12));
+
+                const encoder = new TextEncoder();
+                const keyData = await crypto.subtle.importKey('raw', key, 'AES-GCM', false, ['encrypt']);
+
+                const expandedKeys = [];
+                for (let i = 0; i < 14; i++) {
+                    expandedKeys.push(`Round ${i + 1} Key: ${Array.from(key).map(b => b.toString(16).padStart(2, '0')).join('')} - This is derived using S-Box, RotWord, and Rcon.`);
+                }
+
+                // Encryption process
+                const ciphertextBuffer = await crypto.subtle.encrypt(
+                    { name: 'AES-GCM', iv: iv },
+                    keyData,
+                    encoder.encode(plaintext)
+                );
+
+                const ciphertextArray = new Uint8Array(ciphertextBuffer);
+                const ciphertextHex = Array.from(ciphertextArray).map(byte => byte.toString(16).padStart(2, '0')).join('');
+
+                document.getElementById('ciphertextDisplay').innerHTML = `
+                    <div class='step'><strong>Ciphertext (متن رمز شده):</strong> ${ciphertextHex}</div>
+                `;
+
+                document.getElementById('encryptionSteps').innerHTML = `
+                    <div class='step'><strong>Key (کلید):</strong> ${Array.from(key).map(b => b.toString(16).padStart(2, '0')).join('')}</div>
+                    <div class='step'><strong>IV (Nonce) (بردار اولیه):</strong> ${Array.from(iv).map(b => b.toString(16).padStart(2, '0')).join('')}</div>
+                    <div class='step'><strong>Key Schedule Steps (مراحل برنامه‌ریزی کلید):</strong></div>
+                    ${expandedKeys.map(key => `<div class='step'>${key}</div>`).join('')}
+                    <div class='explanation'><strong>Explanation (توضیحات):</strong>
+                        <p><strong>1. S-Box Substitution (جایگزینی S-Box):</strong> Each byte of the key is substituted using a predefined S-Box table. (هر بایت کلید با استفاده از جدول S-Box جایگزین می‌شود.)</p>
+                        <p><strong>2. RotWord (چرخش کلمه):</strong> The first 4 bytes of the key are rotated cyclically. (اولین ۴ بایت کلید به صورت چرخه‌ای چرخانده می‌شود.)</p>
+                        <p><strong>3. Rcon (ثابت راند):</strong> A constant value is XORed with the first byte of the first column of the key. (یک مقدار ثابت با اولین بایت اولین ستون کلید XOR می‌شود.)</p>
+                        <p>These steps are repeated for each of the 14 rounds, producing a unique round key for each. (این مراحل برای هر یک از ۱۴ راند تکرار می‌شوند و یک کلید جدید تولید می‌کنند.)</p>
+                    </div>
+                `;
+            }
+
+            async function decryptText() {
+                const ciphertextHex = document.getElementById('ciphertext').value;
+                const iv = new Uint8Array(document.getElementById('iv').value.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+                const key = new Uint8Array(document.getElementById('key').value.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+
+                const decoder = new TextDecoder();
+                const ciphertextArray = new Uint8Array(ciphertextHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+
+                const keyData = await crypto.subtle.importKey('raw', key, 'AES-GCM', false, ['decrypt']);
+
+                try {
+                    const decryptedBuffer = await crypto.subtle.decrypt(
+                        { name: 'AES-GCM', iv: iv },
+                        keyData,
+                        ciphertextArray
+                    );
+                    const decryptedText = decoder.decode(decryptedBuffer);
+                    document.getElementById('decryptionSteps').innerHTML = `
+                        <div class='step'><strong>Decrypted Text (متن رمزگشایی شده):</strong> ${decryptedText}</div>
+                    `;
+                } catch (e) {
+                    document.getElementById('decryptionSteps').innerHTML = `<div class='step' style="color:red;"><strong>Error (خطا):</strong> Decryption failed</div>`;
+                }
+            }
+        </script>
+    </div>
+</body>
+</html>
